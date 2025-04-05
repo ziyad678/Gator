@@ -1,0 +1,46 @@
+package main
+
+import (
+	"fmt"
+	"os"
+	"path/filepath" // Use path/filepath for OS-agnostic path joining
+)
+
+func main() {
+	// 1. Get the user's home directory
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		fmt.Printf("Error getting home directory: %v\n", err)
+		os.Exit(1)
+	}
+
+	// 2. Define the filename
+	fileName := "my_app_data.txt" // Choose your desired filename
+
+	// 3. Construct the full path correctly
+	// filepath.Join handles the correct path separators ('\' for Windows)
+	fullPath := filepath.Join(homeDir, fileName)
+
+	fmt.Printf("Attempting to write to: %s\n", fullPath) // Print the path for verification
+
+	// 4. Prepare the data to write
+	data := []byte("This is some data to write to the file.\n")
+
+	// 5. Write the file (os.WriteFile handles opening, writing, closing)
+	// 0644 provides standard read/write permissions for the owner, and read for others.
+	// Windows handles permissions differently, but this is good practice.
+	err = os.WriteFile(fullPath, data, 0644)
+	if err != nil {
+		fmt.Printf("Error writing file: %v\n", err) // **This is where you'll see 'access denied' if it fails**
+		// --- Add Troubleshooting Info Here ---
+		fmt.Println("\n--- Troubleshooting ---")
+		fmt.Printf("Check if you have manual write permissions for the directory: %s\n", homeDir)
+		fmt.Println("Consider Windows Controlled Folder Access settings if enabled.")
+		fmt.Println("Ensure no other program has locked the file (if it already exists).")
+		fmt.Println("Try running the program from a standard user command prompt (not necessarily admin unless testing permissions).")
+		// ------------------------------------
+		os.Exit(1)
+	}
+
+	fmt.Println("Successfully wrote to file:", fullPath)
+}
