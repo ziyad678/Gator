@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"log"
 )
 
@@ -25,9 +26,9 @@ func (c *commands) register(name string, f func(*state, command) error) {
 
 func (c *commands) run(s *state, cmd command) error {
 	log.Printf("Entering run function. running %v command", cmd.name)
-	err := handlerLogin(s, cmd)
-	if err != nil {
-		return err
+	f, ok := c.registeredCommands[cmd.name]
+	if !ok {
+		return errors.New("command not found")
 	}
-	return nil
+	return f(s,cmd)
 }
