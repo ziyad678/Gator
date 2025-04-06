@@ -13,7 +13,7 @@ import (
 
 type state struct {
 	config *config.Config
-	db  *database.Queries
+	db     *database.Queries
 }
 
 func main() {
@@ -33,13 +33,13 @@ func main() {
 		fmt.Println(err)
 	}
 	dbConn, err := sql.Open("postgres", conf.DBURL)
-	if err != nil{
+	if err != nil {
 		log.Fatalf("Failed to connect to db %v\n", err)
 	}
 	dbQueries := database.New(dbConn)
 	s := &state{
 		config: &conf,
-		db: dbQueries,
+		db:     dbQueries,
 	}
 	cmds := commands{
 		registeredCommands: map[string]func(*state, command) error{},
@@ -48,6 +48,8 @@ func main() {
 	cmds.register("register", handlerRegister)
 	cmds.register("reset", handlerReset)
 	cmds.register("users", handlerUsers)
+	cmds.register("agg", handlerAgg)
+	cmds.register("addfeed", handlerAddFeed)
 	cmd := command{
 		name: os.Args[1],
 		args: os.Args[2:],
