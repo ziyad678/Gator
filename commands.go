@@ -6,8 +6,8 @@ import (
 )
 
 type command struct {
-	name string
-	args []string
+	Name string
+	Args []string
 }
 
 type commands struct {
@@ -25,8 +25,8 @@ func (c *commands) register(name string, f func(*state, command) error) {
 }
 
 func (c *commands) run(s *state, cmd command) error {
-	log.Printf("Entering run function. running %v command", cmd.name)
-	f, ok := c.registeredCommands[cmd.name]
+	log.Printf("Entering run function. running %v command", cmd.Name)
+	f, ok := c.registeredCommands[cmd.Name]
 	if !ok {
 		return errors.New("command not found")
 	}
