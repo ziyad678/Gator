@@ -3,46 +3,53 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
-	"os"
 	"time"
 
 	"github.com/Ziyad678/Gator/internal/database"
 	"github.com/google/uuid"
 )
 
-func handlerAddFeed(s *state, cmd command) error {
-	if len(cmd.Args) < 2 {
-		log.Println("Please enter a feed name and ur to add")
+func handlerAddFeed(s *state, cmd command, user database.User) error {
+	if len(cmd.Args) != 2 {
 		return fmt.Errorf("usage: %s <name> <url>", cmd.Name)
 	}
-	user , err:=s.db.GetUser(context.Background(),s.config.CurrentUserName)
-	if err != nil {
-		fmt.Println("Couldn't get user from database.")
-		log.Printf("failed to get user %v from database. %v\n",s.config.CurrentUserName, err)
-		os.Exit(1)
-	}
-	feed := database.CreateFeedParams{
+
+	name := cmd.Args[0]
+	url := cmd.Args[1]
+
+	feed, err := s.db.CreateFeed(context.Background(), database.CreateFeedParams{
 		ID:        uuid.New(),
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-		Name:      cmd.Args[0],
-		Url:       cmd.Args[1],
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
 		UserID:    user.ID,
-	}
-	_, err = s.db.CreateFeed(context.Background(), feed)
+		Name:      name,
+		Url:       url,
+	})
 	if err != nil {
-		fmt.Println("Failed to add feed to database.")
-		log.Printf("failed to add feed %v to database. %v\n", cmd.Args[0], err)
-		os.Exit(1)
+		return fmt.Errorf("couldn't create feed: %w", err)
 	}
 
-	log.Printf("Feed %v successfully added to database\n", feed.Name)
-	fmt.Println("Feed successfully added to database")
+	feedFollow, err := s.db.CreateFeedFollow(context.Background(), database.CreateFeedFollowParams{
+		ID:        uuid.New(),
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
+		UserID:    user.ID,
+		FeedID:    feed.ID,
+	})
+	if err != nil {
+		return fmt.Errorf("couldn't create feed follow: %w", err)
+	}
+
+	fmt.Println("Feed created successfully:")
+	printFeed(feed, user)
+	fmt.Println()
+	fmt.Println("Feed followed successfully:")
+	printFeedFollow(feedFollow.UserName, feedFollow.FeedName)
+	fmt.Println("=====================================")
 	return nil
 }
 
-func handlerFeeds(s *state, cmd command) error {
+func handlerListFeeds(s *state, cmd command) error {
 	feeds, err := s.db.GetFeeds(context.Background())
 	if err != nil {
 		return fmt.Errorf("couldn't get feeds: %w", err)
@@ -65,6 +72,7 @@ func handlerFeeds(s *state, cmd command) error {
 
 	return nil
 }
+
 func printFeed(feed database.Feed, user database.User) {
 	fmt.Printf("* ID:            %s\n", feed.ID)
 	fmt.Printf("* Created:       %v\n", feed.CreatedAt)
@@ -72,4 +80,5 @@ func printFeed(feed database.Feed, user database.User) {
 	fmt.Printf("* Name:          %s\n", feed.Name)
 	fmt.Printf("* URL:           %s\n", feed.Url)
 	fmt.Printf("* User:          %s\n", user.Name)
+	fmt.Printf("* LastFetchedAt: %v\n", feed.LastFetchedAt.Time)
 }
